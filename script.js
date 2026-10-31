@@ -1,10 +1,18 @@
 'use strict';
-document.getElementById('year').textContent = String(new Date().getFullYear());
-document.querySelectorAll('details').forEach((detail) => {
-  detail.addEventListener('toggle', () => {
-    if (!detail.open) return;
-    document.querySelectorAll('details').forEach((other) => {
-      if (other !== detail) other.open = false;
-    });
-  });
-});
+document.getElementById('year').textContent=String(new Date().getFullYear());
+document.querySelectorAll('details').forEach(detail=>detail.addEventListener('toggle',()=>{if(detail.open)document.querySelectorAll('details').forEach(other=>{if(other!==detail)other.open=false;});}));
+const scenarios={
+logistica:{title:'Un magazzino.\nMolte regole.',description:'Committenti diversi, lotti, scadenze e connessioni non sempre disponibili. Il software deve adattarsi al lavoro reale.',inputs:['Ordini','Giacenze','Terminali'],core:'WMS',detail:'Un sistema, più committenti',result:'Flussi tracciabili.\nOperatività continua.'},
+documenti:{title:'Documenti diversi.\nUn linguaggio comune.',description:'File Excel, PDF e scansioni contengono informazioni utili, ma strutture differenti. Il primo passo è riconoscerle e renderle verificabili.',inputs:['Excel / CSV','PDF / scansioni','Correzioni'],core:'Norma',detail:'Riconoscere, mappare, verificare',result:'Dati strutturati.\nFlussi riutilizzabili.'},
+ia:{title:'Più velocità.\nStesso rigore.',description:'Gli agenti aiutano ad analizzare e sviluppare. Architettura, regole e verifica restano parte del lavoro, prima di ogni rilascio.',inputs:['Requisiti','Regole di progetto','Agenti IA'],core:'Metodo',detail:'Analisi, sviluppo, revisione',result:'Codice revisionato.\nDecisioni consapevoli.'}
+};
+const tabs=[...document.querySelectorAll('[data-scenario]')];
+function choose(tab){const s=scenarios[tab.dataset.scenario];tabs.forEach(t=>{t.setAttribute('aria-selected',String(t===tab));t.tabIndex=t===tab?0:-1;});document.getElementById('lab-panel').setAttribute('aria-labelledby',tab.id);for(const[id,value]of Object.entries({'scenario-title':s.title,'scenario-description':s.description,'input-one':s.inputs[0],'input-two':s.inputs[1],'input-three':s.inputs[2],'core-title':s.core,'core-detail':s.detail,'scenario-result':s.result})){const el=document.getElementById(id);el.textContent=value;if(value.includes('\n'))el.style.whiteSpace='pre-line';}}
+tabs.forEach((tab,i)=>{tab.addEventListener('click',()=>choose(tab));tab.addEventListener('keydown',event=>{let next;if(event.key==='ArrowRight')next=tabs[(i+1)%tabs.length];if(event.key==='ArrowLeft')next=tabs[(i+tabs.length-1)%tabs.length];if(event.key==='Home')next=tabs[0];if(event.key==='End')next=tabs.at(-1);if(next){event.preventDefault();choose(next);next.focus();}});});
+let animationsPaused=false;
+const motionButton=document.querySelector('.motion-toggle');
+motionButton.addEventListener('click',()=>{animationsPaused=!animationsPaused;document.body.classList.toggle('animations-paused',animationsPaused);motionButton.setAttribute('aria-pressed',String(animationsPaused));motionButton.textContent=animationsPaused?'Riprendi animazioni':'Pausa animazioni';});
+const motion=matchMedia('(prefers-reduced-motion: reduce)');
+if(!motion.matches&&'IntersectionObserver'in window){document.body.classList.add('js-motion');const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('in-view');observer.unobserve(entry.target);}}),{threshold:.08});document.querySelectorAll('.section-heading,.approach-grid,.project-row,.timeline li,.ai-grid').forEach(section=>{section.classList.add('reveal-section');observer.observe(section);});}
+const canvas=document.getElementById('architecture-canvas');
+if(canvas){const ctx=canvas.getContext('2d');if(ctx){let w=0,h=0,dpr=1,frame=0,visible=true,px=0,py=0;function size(){w=canvas.clientWidth;h=canvas.clientHeight;dpr=Math.min(devicePixelRatio||1,2);canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}size();window.addEventListener('resize',size,{passive:true});canvas.parentElement.addEventListener('pointermove',e=>{const r=canvas.getBoundingClientRect();px=(e.clientX-r.left-w/2)*.025;py=(e.clientY-r.top-h/2)*.025;},{passive:true});if('IntersectionObserver'in window)new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;}).observe(canvas);function draw(time){if(visible){ctx.clearRect(0,0,w,h);const t=motion.matches||animationsPaused?0:time*.00007;const cx=w*.73+px,cy=h*.43+py;for(let ring=0;ring<3;ring++){const radius=Math.min(w*.29,340)+ring*48;ctx.beginPath();ctx.ellipse(cx,cy,radius,radius*.34,-.35+ring*.28,0,Math.PI*2);ctx.strokeStyle='rgba(122,160,234,.14)';ctx.lineWidth=.7;ctx.stroke();for(let n=0;n<5;n++){const angle=t*(ring%2?-1:1)+n*Math.PI*2/5;const x=cx+Math.cos(angle)*radius;const y=cy+Math.sin(angle)*radius*.34;ctx.beginPath();ctx.arc(x,y,n===0?3:1.5,0,Math.PI*2);ctx.fillStyle=n===0?'rgba(185,207,255,.9)':'rgba(151,185,249,.5)';ctx.fill();}}}if(!motion.matches)frame=requestAnimationFrame(draw);}frame=requestAnimationFrame(draw);document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelAnimationFrame(frame);else{cancelAnimationFrame(frame);frame=requestAnimationFrame(draw);}});}}
